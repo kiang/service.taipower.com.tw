@@ -38,8 +38,8 @@ if (!file_exists($docsDir)) {
 }
 
 $csvFile = $docsDir . '/cunli.csv';
-$csvHandle = fopen($csvFile, 'w');
-fputcsv($csvHandle, ['county_name', 'town_name', 'cunli_name', 'c0', 'c1', 'fcid', 'gid']);
+$csvData = [];
+$csvHeader = ['county_name', 'town_name', 'cunli_name', 'c0', 'c1', 'fcid', 'gid'];
 
 echo "Fetching counties from Taipower API...\n";
 
@@ -146,7 +146,7 @@ foreach ($counties as $county) {
                             $cunliC0 = (int)$cunliFields[3];
                             $cunliC1 = (int)$cunliFields[4];
                             
-                            fputcsv($csvHandle, [$countyName, $townName, $cunliName, $cunliC0, $cunliC1, $cunliFcid, $cunliGid]);
+                            $csvData[] = [$countyName, $townName, $cunliName, $cunliC0, $cunliC1, $cunliFcid, $cunliGid];
                         }
                     }
                 }
@@ -159,9 +159,22 @@ foreach ($counties as $county) {
     usleep(100000);
 }
 
+echo "Sorting data by gid...\n";
+
+// Sort by gid (column 6)
+usort($csvData, function($a, $b) {
+    return $a[6] <=> $b[6];
+});
+
+// Write sorted data to CSV
+$csvHandle = fopen($csvFile, 'w');
+fputcsv($csvHandle, $csvHeader);
+foreach ($csvData as $row) {
+    fputcsv($csvHandle, $row);
+}
 fclose($csvHandle);
 
 echo "All raw data saved to raw/ directory\n";
-echo "CSV file generated: docs/cunli.csv\n";
+echo "CSV file generated: docs/cunli.csv (sorted by gid)\n";
 
 ?>

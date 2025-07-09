@@ -86,8 +86,8 @@ if (!file_exists($cunliCsvFile)) {
 }
 
 $taipowerCsvFile = dirname(__DIR__) . '/docs/taipower.csv';
-$taipowerHandle = fopen($taipowerCsvFile, 'w');
-fputcsv($taipowerHandle, ['VILLCODE', 'c0', 'c1']);
+$taipowerData = [];
+$taipowerHeader = ['VILLCODE', 'c0', 'c1'];
 
 $cunliHandle = fopen($cunliCsvFile, 'r');
 $header = fgetcsv($cunliHandle);
@@ -116,7 +116,7 @@ while (($row = fgetcsv($cunliHandle)) !== false) {
     
     if (isset($cunliLookup[$key])) {
         $villCode = $cunliLookup[$key];
-        fputcsv($taipowerHandle, [$villCode, $c0, $c1]);
+        $taipowerData[] = [$villCode, $c0, $c1];
         $matchedCount++;
     } else {
         $unmatchedCount++;
@@ -130,13 +130,27 @@ while (($row = fgetcsv($cunliHandle)) !== false) {
 }
 
 fclose($cunliHandle);
+
+echo "\nSorting data by VILLCODE...\n";
+
+// Sort by VILLCODE (column 0)
+usort($taipowerData, function($a, $b) {
+    return strcmp($a[0], $b[0]);
+});
+
+// Write sorted data to CSV
+$taipowerHandle = fopen($taipowerCsvFile, 'w');
+fputcsv($taipowerHandle, $taipowerHeader);
+foreach ($taipowerData as $row) {
+    fputcsv($taipowerHandle, $row);
+}
 fclose($taipowerHandle);
 
 echo "\nMapping completed:\n";
 echo "  Processed: $processedCount records\n";
 echo "  Matched: $matchedCount records\n";
 echo "  Unmatched: $unmatchedCount records\n";
-echo "  Output file: docs/taipower.csv\n";
+echo "  Output file: docs/taipower.csv (sorted by VILLCODE)\n";
 
 if ($unmatchedCount > 0) {
     echo "\nRemaining unmatched records:\n";
